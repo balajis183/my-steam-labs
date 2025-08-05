@@ -352,14 +352,30 @@ ${indent(raw)}
 
       function generateCCode() {
         const raw = Blockly.JavaScript.workspaceToCode(workspace);
-        const code = `
-#include <stdio.h>
-int main() {
-${indent(raw)}
-  return 0;
+        
+        // Convert JavaScript to Arduino C syntax
+        let cCode = raw
+          .replace(/console\.log\(/g, 'Serial.println(')
+          .replace(/;/g, ';')
+          .replace(/\b(var|let|const)\s+/g, 'int ')
+          .replace(/\bfunction\b/g, 'void')
+          .replace(/\{/g, '{')
+          .replace(/\}/g, '}');
+        
+        // Add proper Arduino C structure
+        const code = `#include <Arduino.h>
+
+void setup() {
+  Serial.begin(9600);
+  // Setup code here
+}
+
+void loop() {
+${indent(cCode)}
 }`;
-        sendCodeToMonaco(code, 'c');
-        setCurrentLanguage('c');
+        
+        sendCodeToMonaco(code, 'cpp');
+        setCurrentLanguage('cpp');
       }
 
       // Terminal functions

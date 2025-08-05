@@ -126,9 +126,14 @@ ipcMain.handle('compile-cpp', async (_e, code) => {
     fs.writeFileSync(cppPath, code, 'utf-8');
     
     return await new Promise(res => {
-      exec(`g++ "${cppPath}" -o "${exePath}"`, (err, out, errOut) => {
-        if (err) res({ success: false, error: errOut || out });
-        else res({ success: true, output: out + errOut, compiledPath: exePath });
+      // Use g++ with Arduino compatibility flags
+      const compileCmd = `g++ "${cppPath}" -o "${exePath}" -std=c++11 -DARDUINO=100`;
+      exec(compileCmd, (err, out, errOut) => {
+        if (err) {
+          res({ success: false, error: errOut || out || err.message });
+        } else {
+          res({ success: true, output: 'C++ compilation successful', compiledPath: exePath });
+        }
       });
     });
   } catch (err) { 
@@ -210,10 +215,26 @@ ipcMain.handle('upload-cpp', async (_e, code, port) => {
     fs.writeFileSync(cppPath, code, 'utf-8');
     
     return await new Promise(res => {
-      exec(`g++ "${cppPath}" -o "${exePath}" && "${exePath}"`, (err, out, errOut) => {
-        safeSend('terminal-output', out + errOut);
-        if (err) res({ success: false, error: out + errOut });
-        else res({ success: true, output: out });
+      // First compile the code
+      const compileCmd = `g++ "${cppPath}" -o "${exePath}" -std=c++11 -DARDUINO=100`;
+      exec(compileCmd, (err1, out1, errOut1) => {
+        if (err1) {
+          safeSend('terminal-output', `Compilation failed: ${errOut1 || out1}`);
+          return res({ success: false, error: errOut1 || out1 });
+        }
+        
+        safeSend('terminal-output', 'Compilation successful, uploading...');
+        
+        // For now, just run the compiled executable locally
+        // In the future, this could upload to Arduino via Arduino CLI
+        exec(`"${exePath}"`, (err2, out2, errOut2) => {
+          safeSend('terminal-output', out2 + errOut2);
+          if (err2) {
+            res({ success: false, error: out2 + errOut2 });
+          } else {
+            res({ success: true, output: out2 });
+          }
+        });
       });
     });
   } catch (err) { 
@@ -292,13 +313,26 @@ ipcMain.handle('run-cpp', async (_e, code) => {
     fs.writeFileSync(cppPath, code, 'utf-8');
     
     return await new Promise(resolve => {
-      exec(`g++ "${cppPath}" -o "${exePath}" && "${exePath}"`, (err, stdout, stderr) => {
-        if (err) resolve(stderr || err.message || 'Unknown error');
-        else resolve(stdout || 'No output');
+      // Compile and run the C++ code
+      const compileCmd = `g++ "${cppPath}" -o "${exePath}" -std=c++11 -DARDUINO=100`;
+      exec(compileCmd, (err1, stdout1, stderr1) => {
+        if (err1) {
+          resolve(`Compilation failed: ${stderr1 || stdout1}`);
+          return;
+        }
+        
+        // Run the compiled executable
+        exec(`"${exePath}"`, (err2, stdout2, stderr2) => {
+          if (err2) {
+            resolve(`Execution failed: ${stderr2 || stdout2}`);
+          } else {
+            resolve(stdout2 || 'Program executed successfully');
+          }
+        });
       });
     });
   } catch (err) { 
-    return err.message || "Error running script"; 
+    return err.message || "Error running C++ code"; 
   }
 });
 
