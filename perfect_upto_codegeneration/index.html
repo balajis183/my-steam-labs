@@ -325,27 +325,67 @@
       }
 
       function generatePythonCode() {
-        const code = Blockly.JavaScript.workspaceToCode(workspace)
-          .replace(/console\.log/g, 'print')
+        const raw = Blockly.JavaScript.workspaceToCode(workspace);
+        
+        // Convert JavaScript to proper Python syntax
+        let pythonCode = raw
+          .replace(/console\.log\(/g, 'print(')
           .replace(/;/g, '')
           .replace(/\b(var|let|const)\s+/g, '')
           .replace(/\bfunction\b/g, 'def')
           .replace(/\{/g, ':')
-          .replace(/\}/g, '');
+          .replace(/\}/g, '')
+          .replace(/void\s+setup\(\)/g, 'def setup():')
+          .replace(/void\s+loop\(\)/g, 'def loop():')
+          .replace(/void\s+app_main\(\)/g, 'def main():');
+        
+        // Add proper Python structure
+        const code = `import time
+
+def setup():
+    # Setup code here
+    pass
+
+def loop():
+${indent(pythonCode)}
+
+def main():
+    setup()
+    while True:
+        loop()
+        time.sleep(0.1)
+
+if __name__ == "__main__":
+    main()`;
+        
         sendCodeToMonaco(code, 'python');
         setCurrentLanguage('python');
       }
 
       function generateCppCode() {
         const raw = Blockly.JavaScript.workspaceToCode(workspace);
-        const code = `
-#include <Arduino.h>
+        
+        // Convert JavaScript to Arduino C++ syntax
+        let cppCode = raw
+          .replace(/console\.log\(/g, 'Serial.println(')
+          .replace(/;/g, ';')
+          .replace(/\b(var|let|const)\s+/g, 'int ')
+          .replace(/\bfunction\b/g, 'void')
+          .replace(/\{/g, '{')
+          .replace(/\}/g, '}');
+        
+        // Add proper Arduino C++ structure
+        const code = `#include <Arduino.h>
+
 void setup() {
-  // Setup code
+  Serial.begin(9600);
+  // Setup code here
 }
+
 void loop() {
-${indent(raw)}
+${indent(cppCode)}
 }`;
+        
         sendCodeToMonaco(code, 'cpp');
         setCurrentLanguage('cpp');
       }
