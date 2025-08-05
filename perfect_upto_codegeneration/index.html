@@ -321,6 +321,7 @@
       function generateJavaScriptCode() {
         const code = Blockly.JavaScript.workspaceToCode(workspace);
         sendCodeToMonaco(code, 'javascript');
+        setCurrentLanguage('javascript');
       }
 
       function generatePythonCode() {
@@ -332,6 +333,7 @@
           .replace(/\{/g, ':')
           .replace(/\}/g, '');
         sendCodeToMonaco(code, 'python');
+        setCurrentLanguage('python');
       }
 
       function generateCppCode() {
@@ -345,6 +347,7 @@ void loop() {
 ${indent(raw)}
 }`;
         sendCodeToMonaco(code, 'cpp');
+        setCurrentLanguage('cpp');
       }
 
       function generateCCode() {
@@ -356,6 +359,7 @@ ${indent(raw)}
   return 0;
 }`;
         sendCodeToMonaco(code, 'c');
+        setCurrentLanguage('c');
       }
 
       // Terminal functions

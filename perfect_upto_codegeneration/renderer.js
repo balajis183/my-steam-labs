@@ -2,6 +2,7 @@ console.log('⚡ renderer.js loaded');
 
 let currentPort = null;
 let currentLanguage = 'python'; // Default language
+let lastGeneratedLanguage = 'python'; // Track last generated language
 let lastCompiledPath = null;
 let lastCompiledSuccess = false;
 
@@ -33,13 +34,23 @@ function getCurrentCode() {
   return '';
 }
 
-// Get current language from Monaco editor
+// Get current language from Monaco editor or last generated language
 function getCurrentLanguage() {
   const editorWindow = document.getElementById('monacoEditor').contentWindow;
   if (editorWindow && editorWindow.getEditorLanguage) {
-    return editorWindow.getEditorLanguage();
+    const editorLang = editorWindow.getEditorLanguage();
+    if (editorLang && editorLang !== 'javascript') {
+      return editorLang;
+    }
   }
-  return 'python'; // Default fallback
+  // Fallback to last generated language
+  return lastGeneratedLanguage;
+}
+
+// Set the current language when code is generated
+function setCurrentLanguage(language) {
+  lastGeneratedLanguage = language;
+  console.log(`🎯 Language set to: ${language}`);
 }
 
 // Multi-language compile function
@@ -182,6 +193,7 @@ async function runCode() {
 window.compileCode = compileCode;
 window.uploadCode = uploadCode;
 window.runCode = runCode;
+window.setCurrentLanguage = setCurrentLanguage;
 
 // Serial port management
 async function refreshPorts() {

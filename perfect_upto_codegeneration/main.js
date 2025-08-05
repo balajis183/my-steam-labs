@@ -84,13 +84,16 @@ ipcMain.handle('compile-python', async (_e, code) => {
   try {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'python-compile-'));
     const pyPath = path.join(tmpDir, 'main.py');
-    const mpyPath = path.join(tmpDir, 'main.mpy');
     fs.writeFileSync(pyPath, code, 'utf-8');
     
+    // For MicroPython, we'll just validate the syntax
     return await new Promise(res => {
-      exec(`python -m mpy_cross "${pyPath}" -o "${mpyPath}"`, (err, out, errOut) => {
-        if (err) res({ success: false, error: errOut || out });
-        else res({ success: true, output: out + errOut, compiledPath: mpyPath });
+      exec(`python -m py_compile "${pyPath}"`, (err, out, errOut) => {
+        if (err) {
+          res({ success: false, error: errOut || out || err.message });
+        } else {
+          res({ success: true, output: 'Python syntax validation successful', compiledPath: pyPath });
+        }
       });
     });
   } catch (err) { 
@@ -176,7 +179,7 @@ ipcMain.handle('upload-python', async (_e, code, port) => {
         });
       });
     });
-  } catch (err) { 
+  } catch (err) {
     return { success: false, error: err.message }; 
   }
 });
@@ -232,7 +235,7 @@ ipcMain.handle('upload-c', async (_e, code, port) => {
         else res({ success: true, output: out });
       });
     });
-  } catch (err) { 
+  } catch (err) {
     return { success: false, error: err.message }; 
   }
 });
@@ -274,8 +277,8 @@ ipcMain.handle('run-javascript', async (_e, code) => {
       exec(`node "${jsPath}"`, (err, stdout, stderr) => {
         if (err) resolve(stderr || err.message || 'Unknown error');
         else resolve(stdout || 'No output');
-      });
     });
+  });
   } catch (err) { 
     return err.message || "Error running script"; 
   }
@@ -312,7 +315,7 @@ ipcMain.handle('run-c', async (_e, code) => {
         else resolve(stdout || 'No output');
       });
     });
-  } catch (err) { 
+  } catch (err) {
     return err.message || "Error running script"; 
   }
 });
@@ -336,7 +339,7 @@ ipcMain.handle('save-code', async (_e, code, language = 'python') => {
     if (!filePath) return { success: false, error: 'Save cancelled.' };
     fs.writeFileSync(filePath, code, 'utf-8');
     return { success: true };
-  } catch (err) { 
+  } catch (err) {
     return { success: false, error: err.message }; 
   }
 });
