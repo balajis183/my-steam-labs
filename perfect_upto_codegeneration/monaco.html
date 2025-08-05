@@ -27,17 +27,41 @@
         automaticLayout: true  // Automatically adjusts layout
       });
 
+      // Expose functions for parent window to access
+      window.getEditorValue = function() {
+        return window.editor ? window.editor.getValue() : '';
+      };
+
+      window.getEditorLanguage = function() {
+        if (window.editor && window.editor.getModel()) {
+          return window.editor.getModel().getLanguageId();
+        }
+        return 'javascript'; // Default fallback
+      };
+
+      window.setEditorValue = function(code) {
+        if (window.editor) {
+          window.editor.setValue(code);
+        }
+      };
+
+      window.setEditorLanguage = function(language) {
+        if (window.editor && window.editor.getModel()) {
+          monaco.editor.setModelLanguage(window.editor.getModel(), language);
+        }
+      };
+
       // Listen for messages from the parent window (index.html)
       window.addEventListener('message', function(event) {
         const { code, language } = event.data;
 
         if (typeof code === 'string') {
           // Update the editor with the code received from the parent page
-          window.editor.setValue(code);
+          window.setEditorValue(code);
 
           // Set the language of Monaco Editor
           if (language) {
-            monaco.editor.setModelLanguage(window.editor.getModel(), language);
+            window.setEditorLanguage(language);
           }
         }
       });

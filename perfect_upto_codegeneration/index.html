@@ -28,10 +28,18 @@
         box-sizing: border-box;
       }
 
+      #main-container {
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: calc(100vh - 50px); /* fallback, updated dynamically */
+      }
+
       #main {
         display: flex;
         width: 100%;
-        height: calc(100vh - 50px); /* fallback, updated dynamically */
+        flex: 1;
+        min-height: 0;
       }
 
       #blocklyDiv {
@@ -48,6 +56,103 @@
         background: #fafafa;
         border-left: 1px solid #ccc;
         box-sizing: border-box;
+      }
+
+      /* Terminal Panel Styles */
+      #terminal-panel {
+        background: #1e1e1e;
+        color: #f0f0f0;
+        border-top: 1px solid #333;
+        display: none; /* Hidden by default */
+        flex-direction: column;
+        min-height: 200px;
+        max-height: 50vh;
+      }
+
+      #terminal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 12px;
+        background: #2d2d2d;
+        border-bottom: 1px solid #444;
+        font-size: 12px;
+        font-weight: 500;
+      }
+
+      #terminal-title {
+        color: #ccc;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      #terminal-controls {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .terminal-btn {
+        background: #444;
+        color: #fff;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 3px;
+        cursor: pointer;
+        font-size: 10px;
+        transition: background 0.2s;
+      }
+
+      .terminal-btn:hover {
+        background: #555;
+      }
+
+      #terminal-resize-handle {
+        height: 4px;
+        background: #444;
+        cursor: ns-resize;
+        transition: background 0.2s;
+      }
+
+      #terminal-resize-handle:hover {
+        background: #666;
+      }
+
+      #terminal-content {
+        flex: 1;
+        padding: 12px;
+        font-family: 'Courier New', monospace;
+        font-size: 12px;
+        overflow-y: auto;
+        background: #1e1e1e;
+      }
+
+      #terminal-output {
+        margin: 0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        line-height: 1.4;
+      }
+
+      /* Terminal toggle button */
+      #terminal-toggle {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        background: #007acc;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 12px;
+        z-index: 1000;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+      }
+
+      #terminal-toggle:hover {
+        background: #005a9e;
       }
 
       button {
@@ -79,13 +184,34 @@
       <div id="connection-status" style="width:15px; height:15px; border-radius:50%; background-color:grey; display:inline-block; margin-left:10px;"></div>
     </div>
 
-    <!-- Main layout -->
-    <div id="main">
-      <div id="blocklyDiv"></div>
-      <div id="codeArea">
-        <iframe id="monacoEditor" src="monaco.html"></iframe>
+    <!-- Main container with terminal -->
+    <div id="main-container">
+      <!-- Main layout -->
+      <div id="main">
+        <div id="blocklyDiv"></div>
+        <div id="codeArea">
+          <iframe id="monacoEditor" src="monaco.html"></iframe>
+        </div>
+      </div>
+
+      <!-- Terminal Panel -->
+      <div id="terminal-panel">
+        <div id="terminal-header">
+          <span id="terminal-title">Terminal</span>
+          <div id="terminal-controls">
+            <button class="terminal-btn" onclick="clearTerminal()">Clear</button>
+            <button class="terminal-btn" onclick="toggleTerminal()">Hide</button>
+          </div>
+        </div>
+        <div id="terminal-resize-handle"></div>
+        <div id="terminal-content">
+          <pre id="terminal-output"></pre>
+        </div>
       </div>
     </div>
+
+    <!-- Terminal Toggle Button -->
+    <button id="terminal-toggle" onclick="toggleTerminal()">Show Terminal</button>
 
     <!-- Blockly Toolbox -->
     <xml id="toolbox" style="display: none">
@@ -143,17 +269,21 @@
 
     <script>
       let workspace;
+      let terminalVisible = false;
+      let isResizing = false;
+      let startY = 0;
+      let startHeight = 0;
 
       fetch('navbar.html')
         .then(res => res.text())
         .then(html => {
           document.getElementById('navbar-placeholder').innerHTML = html;
 
-          // Adjust #main height after navbar loads
+          // Adjust #main-container height after navbar loads
           requestAnimationFrame(() => {
             const navbarHeight = document.getElementById('navbar-placeholder').offsetHeight || 0;
             const topbarHeight = document.getElementById('topbar').offsetHeight || 0;
-            document.getElementById('main').style.height = `calc(100vh - ${navbarHeight + topbarHeight}px)`;
+            document.getElementById('main-container').style.height = `calc(100vh - ${navbarHeight + topbarHeight}px)`;
             Blockly.svgResize(workspace);
           });
         });
@@ -174,8 +304,14 @@
 
       function copyCode() {
         const editorWindow = document.getElementById('monacoEditor').contentWindow;
-        editorWindow.document.execCommand('copy');
-        alert('Code copied!');
+        if (editorWindow && editorWindow.getEditorValue) {
+          const code = editorWindow.getEditorValue();
+          navigator.clipboard.writeText(code).then(() => {
+            alert('Code copied to clipboard!');
+          }).catch(() => {
+            alert('Failed to copy code. Please select and copy manually.');
+          });
+        }
       }
 
       function indent(code) {
@@ -184,7 +320,7 @@
 
       function generateJavaScriptCode() {
         const code = Blockly.JavaScript.workspaceToCode(workspace);
-        sendCodeToMonaco(code);
+        sendCodeToMonaco(code, 'javascript');
       }
 
       function generatePythonCode() {
@@ -222,11 +358,77 @@ ${indent(raw)}
         sendCodeToMonaco(code, 'c');
       }
 
+      // Terminal functions
+      function toggleTerminal() {
+        const terminalPanel = document.getElementById('terminal-panel');
+        const toggleBtn = document.getElementById('terminal-toggle');
+        
+        if (terminalVisible) {
+          terminalPanel.style.display = 'none';
+          toggleBtn.textContent = 'Show Terminal';
+          terminalVisible = false;
+        } else {
+          terminalPanel.style.display = 'flex';
+          toggleBtn.textContent = 'Hide Terminal';
+          terminalVisible = true;
+        }
+        
+        // Resize Blockly workspace
+        setTimeout(() => Blockly.svgResize(workspace), 100);
+      }
+
+      function clearTerminal() {
+        const terminalOutput = document.getElementById('terminal-output');
+        if (terminalOutput) {
+          terminalOutput.textContent = '';
+        }
+      }
+
+      // Make functions globally available
+      window.toggleTerminal = toggleTerminal;
+      window.clearTerminal = clearTerminal;
+
+      // Terminal resize functionality
+      function setupTerminalResize() {
+        const resizeHandle = document.getElementById('terminal-resize-handle');
+        const terminalPanel = document.getElementById('terminal-panel');
+        const mainContainer = document.getElementById('main-container');
+
+        resizeHandle.addEventListener('mousedown', (e) => {
+          isResizing = true;
+          startY = e.clientY;
+          startHeight = terminalPanel.offsetHeight;
+          document.body.style.cursor = 'ns-resize';
+          e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+          if (!isResizing) return;
+          
+          const deltaY = startY - e.clientY;
+          const newHeight = Math.max(200, Math.min(50, startHeight + deltaY));
+          terminalPanel.style.height = `${newHeight}px`;
+        });
+
+        document.addEventListener('mouseup', () => {
+          if (isResizing) {
+            isResizing = false;
+            document.body.style.cursor = '';
+            Blockly.svgResize(workspace);
+          }
+        });
+      }
+
+      // Initialize terminal resize
+      document.addEventListener('DOMContentLoaded', () => {
+        setupTerminalResize();
+      });
+
       // Board connection status check
       const statusIndicator = document.getElementById('connection-status');
       document.getElementById('checkConnectionBtn').addEventListener('click', async () => {
         statusIndicator.style.backgroundColor = 'grey';
-        const connected = await window.electronAPI?.checkConnection?.();
+        const connected = await window.electronAPI?.checkBoard?.();
         statusIndicator.style.backgroundColor = connected ? 'green' : 'red';
       });
     </script>

@@ -79,6 +79,10 @@
       color: #FF5C1B;
       background: none;
     }
+    .compile {
+      background-color: #FF8C00;
+      color: white;
+    }
     .icon-button {
       background: none;
       border: none;
@@ -117,15 +121,11 @@
     <select id="portSelect"></select>
     
     <button onclick="refreshPorts()">Refresh Ports</button>
-
-    
-    <button class="button upload"> Upload</button>
-    <button class="button run">Compile</button>
+    <button class="button run" onclick="runCode()">Run</button>
+    <button class="button upload" onclick="uploadCode()">Upload</button>
+    <button class="button compile" onclick="compileCode()">Compile</button>
     
   </div>
-
-  <!-- Optional: Flash/Compile/Save/Output area -->
-  <pre id="output" style="padding:10px; font-size:13px;"></pre>
 
   <script src="renderer.js"></script>
   <script>
