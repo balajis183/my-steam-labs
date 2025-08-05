@@ -149,9 +149,14 @@ ipcMain.handle('compile-c', async (_e, code) => {
     fs.writeFileSync(cPath, code, 'utf-8');
     
     return await new Promise(res => {
-      exec(`gcc "${cPath}" -o "${exePath}"`, (err, out, errOut) => {
-        if (err) res({ success: false, error: errOut || out });
-        else res({ success: true, output: out + errOut, compiledPath: exePath });
+      // Use GCC for C compilation
+      const compileCmd = `gcc "${cPath}" -o "${exePath}" -std=c99`;
+      exec(compileCmd, (err, out, errOut) => {
+        if (err) {
+          res({ success: false, error: errOut || out || err.message });
+        } else {
+          res({ success: true, output: 'C compilation successful', compiledPath: exePath });
+        }
       });
     });
   } catch (err) { 
@@ -250,13 +255,28 @@ ipcMain.handle('upload-c', async (_e, code, port) => {
     fs.writeFileSync(cPath, code, 'utf-8');
     
     return await new Promise(res => {
-      exec(`gcc "${cPath}" -o "${exePath}" && "${exePath}"`, (err, out, errOut) => {
-        safeSend('terminal-output', out + errOut);
-        if (err) res({ success: false, error: out + errOut });
-        else res({ success: true, output: out });
+      // First compile the C code
+      const compileCmd = `gcc "${cPath}" -o "${exePath}" -std=c99`;
+      exec(compileCmd, (err1, out1, errOut1) => {
+        if (err1) {
+          safeSend('terminal-output', `C compilation failed: ${errOut1 || out1}`);
+          return res({ success: false, error: errOut1 || out1 });
+        }
+        
+        safeSend('terminal-output', 'C compilation successful, executing...');
+        
+        // Execute the compiled C program
+        exec(`"${exePath}"`, (err2, out2, errOut2) => {
+          safeSend('terminal-output', out2 + errOut2);
+          if (err2) {
+            res({ success: false, error: out2 + errOut2 });
+          } else {
+            res({ success: true, output: out2 });
+          }
+        });
       });
     });
-  } catch (err) {
+  } catch (err) { 
     return { success: false, error: err.message }; 
   }
 });
@@ -344,13 +364,26 @@ ipcMain.handle('run-c', async (_e, code) => {
     fs.writeFileSync(cPath, code, 'utf-8');
     
     return await new Promise(resolve => {
-      exec(`gcc "${cPath}" -o "${exePath}" && "${exePath}"`, (err, stdout, stderr) => {
-        if (err) resolve(stderr || err.message || 'Unknown error');
-        else resolve(stdout || 'No output');
+      // Compile and run the C code
+      const compileCmd = `gcc "${cPath}" -o "${exePath}" -std=c99`;
+      exec(compileCmd, (err1, stdout1, stderr1) => {
+        if (err1) {
+          resolve(`C compilation failed: ${stderr1 || stdout1}`);
+          return;
+        }
+        
+        // Run the compiled C executable
+        exec(`"${exePath}"`, (err2, stdout2, stderr2) => {
+          if (err2) {
+            resolve(`C execution failed: ${stderr2 || stdout2}`);
+          } else {
+            resolve(stdout2 || 'C program executed successfully');
+          }
+        });
       });
     });
-  } catch (err) {
-    return err.message || "Error running script"; 
+  } catch (err) { 
+    return err.message || "Error running C code"; 
   }
 });
 
