@@ -2,6 +2,36 @@
 
 A comprehensive code generation and hardware interaction tool with multi-language support for JavaScript, Python, C++, and C.
 
+## 🚀 Recent Updates - Language Detection Fix
+
+### ✅ **Fixed Issues**
+- **Language Detection**: Now properly detects C/C++ code and compiles with correct compiler
+- **Auto-Detection**: Automatically detects language from code content
+- **Manual Selection**: Added language dropdown for manual language selection
+- **Real-time Detection**: Monaco editor now detects language as you type
+
+### 🎯 **Language Detection Features**
+
+#### **Automatic Detection**
+The system now automatically detects the language based on code content:
+
+- **C++/Arduino**: Detects `#include <Arduino.h>`, `void setup()`, `void loop()`, `Serial.`, `F_CPU`
+- **C**: Detects `#include <stdio.h>`, `printf()`, `int main()`, `return 0;`
+- **Python**: Detects `import`, `def`, `print()`, `if __name__`, `time.sleep`
+- **JavaScript**: Detects `console.log()`, `function`, `var`, `let`, `const`
+
+#### **Manual Language Selection**
+- **Language Dropdown**: Select language manually from the navbar
+- **Auto Detect**: Choose "Auto Detect" to let the system detect automatically
+- **Override**: Manually select language to override auto-detection
+
+### 🔧 **How It Works**
+
+1. **Code Generation**: When you generate code from blocks, the language is automatically set
+2. **Manual Typing**: When you type code manually, the system detects the language
+3. **Compilation**: The correct compiler is used based on detected/selected language
+4. **Feedback**: Terminal shows which language is being used for compilation
+
 ## Features
 
 ### 🚀 Multi-Language Support
@@ -52,235 +82,75 @@ The application has been tested and verified to work with:
 #### **Arduino Boards**
 - **Upload**: Compiles and uploads via Arduino CLI (if installed)
 - **Run**: Executes compiled code on board
-- **Detection**: Detects Arduino boards via USB serial
 
-#### **Other Development Boards**
-- **Raspberry Pi**: Via serial connection
-- **Generic USB Serial**: Any board with USB serial interface
-
-### 🔧 **Hardware Requirements**
-
-#### **For Python/ESP32:**
-```bash
-# Install mpremote for ESP32 support
-pip install mpremote
-
-# Install MicroPython cross-compiler (optional)
-pip install mpy-cross
-```
-
-#### **For C/C++:**
-```bash
-# Install GCC compiler
-# Windows: Install MinGW or use WSL
-# macOS: Install Xcode Command Line Tools
-# Linux: sudo apt-get install build-essential
-```
-
-#### **For JavaScript:**
-```bash
-# Install Node.js
-# Download from https://nodejs.org/
-```
-
-### 🧪 **Testing Hardware Connectivity**
-
-Run the hardware test to verify your setup:
-
-```bash
-node test_hardware.js
-```
-
-This will check:
-- ✅ Serial port detection
-- ✅ mpremote availability (for ESP32)
-- ✅ Python availability
-- ✅ GCC availability (for C/C++)
-- ✅ Node.js availability (for JavaScript)
+### 🔌 **Serial Port Management**
+- **Automatic Detection**: Scans for available serial ports
+- **Real-time Status**: Shows connection status
+- **Port Selection**: Dropdown to select specific port
+- **Refresh**: Button to refresh available ports
 
 ## Usage
 
-### 1. Generate Code
-- Use the Blockly interface to create your program
-- Click "Generate [Language]" to convert to code
-- Code appears in the Monaco editor
+### 📝 **Code Generation**
+1. **Create Blocks**: Drag and drop blocks from the toolbox
+2. **Generate Code**: Click language-specific generate buttons
+3. **Edit Code**: Modify generated code in Monaco editor
+4. **Compile/Run**: Use compile, upload, or run buttons
 
-### 2. Hardware Connection
-- Click "Refresh Ports" to detect available serial ports
-- Select your device from the dropdown
-- Check board status with the status indicator
+### 🔧 **Manual Code Entry**
+1. **Type Code**: Write code directly in Monaco editor
+2. **Language Detection**: System automatically detects language
+3. **Manual Override**: Use language dropdown if needed
+4. **Compile/Run**: Use action buttons
 
-### 3. Compile, Upload, Run
-- **Compile**: Validates and compiles code for the target language
-- **Upload**: Transfers code to hardware (Python) or executes locally
-- **Run**: Immediately executes the code and shows output
-
-### 4. Terminal Output
-- All operations show real-time feedback in the terminal
-- Clear terminal with the "Clear" button
-- Scroll through output history
-
-## Hardware-Specific Instructions
-
-### ESP32 with MicroPython
-
-1. **Connect ESP32** via USB cable
-2. **Flash MicroPython** to ESP32 (if not already done)
-3. **Generate Python code** in the application
-4. **Select ESP32 port** from dropdown
-5. **Upload code** - it will be transferred to ESP32
-6. **Run code** - executes directly on ESP32
-
-### Arduino Boards
-
-1. **Connect Arduino** via USB cable
-2. **Generate C++ code** in the application
-3. **Select Arduino port** from dropdown
-4. **Upload code** - compiles and uploads to Arduino
-5. **Run code** - executes on Arduino board
-
-### Local Development
-
-1. **Generate code** in any supported language
-2. **Compile** to check for syntax errors
-3. **Run** to execute locally
-4. **View output** in terminal
-
-## Requirements
-
-### System Dependencies
-- **Node.js**: For JavaScript execution
-- **Python**: For Python execution and MicroPython tools
-- **GCC**: For C/C++ compilation
-- **mpremote**: For ESP32 MicroPython uploads
-
-### Installation
-```bash
-npm install
-npm start
-```
-
-## File Structure
-
-```
-├── main.js              # Main Electron process
-├── renderer.js          # Renderer process with UI logic
-├── preload.js           # IPC bridge for main-renderer communication
-├── index.html           # Main application interface
-├── navbar.html          # Navigation bar with hardware controls
-├── monaco.html          # Monaco editor configuration
-├── status.py            # Board connection status checker
-├── test_hardware.js     # Hardware connectivity test
-└── package.json         # Dependencies and scripts
-```
-
-## API Reference
-
-### Main Process (main.js)
-- `compile-[language]`: Compile code for specific language
-- `upload-[language]`: Upload/execute code for specific language
-- `run-[language]`: Run code for specific language
-- `list-serial-ports`: Get available serial ports
-- `open-serial-port`: Connect to serial port
-- `check-board`: Check hardware connection status
-
-### Renderer Process (renderer.js)
-- `compileCode()`: Multi-language compilation
-- `uploadCode()`: Multi-language upload/execution
-- `runCode()`: Multi-language execution
-- `appendTerminalOutput()`: Add output to terminal
-- `clearTerminal()`: Clear terminal output
-
-## Terminal Output Examples
-
-### Successful ESP32 Python Upload
-```
-🔄 Uploading python code to COM3...
-📤 Uploading python code to COM3...
-✅ Upload successful!
-[Re-opening port COM3 after reset]
-✅ Reconnected to COM3
-```
-
-### C++ Compilation
-```
-🔄 Compiling cpp code...
-✅ Compilation successful!
-g++ "C:\Users\...\main.cpp" -o "C:\Users\...\main.exe"
-```
-
-### JavaScript Execution
-```
-▶️ Running javascript code...
-📋 Execution output:
-Hello from JavaScript!
-```
+### 🎯 **Language Selection**
+- **Auto Detect**: Let system detect language automatically
+- **Manual Select**: Choose specific language from dropdown
+- **Override**: Force compilation with specific language
 
 ## Troubleshooting
 
-### Hardware Connection Issues
+### ❌ **Common Issues**
 
-#### **No Ports Detected**
-- Check USB cable connection
-- Try different USB port
-- Install USB drivers for your board
-- Restart the application
+#### **Language Detection Issues**
+- **Problem**: Wrong language detected
+- **Solution**: Use language dropdown to manually select correct language
 
-#### **ESP32 Upload Fails**
-- Ensure MicroPython is flashed to ESP32
-- Install mpremote: `pip install mpremote`
-- Check if ESP32 is in bootloader mode
-- Try pressing reset button on ESP32
+#### **Compilation Errors**
+- **Problem**: C/C++ code compiled as Python
+- **Solution**: Ensure language is correctly detected or manually selected
 
-#### **Arduino Upload Fails**
-- Install Arduino CLI for Arduino support
-- Check board type and port selection
-- Ensure Arduino IDE drivers are installed
+#### **Hardware Connection Issues**
+- **Problem**: Port not detected
+- **Solution**: Click "Refresh Ports" button
 
-#### **C/C++ Compilation Fails**
-- Install GCC compiler
-- Windows: Install MinGW or use WSL
-- macOS: Install Xcode Command Line Tools
-- Linux: `sudo apt-get install build-essential`
-
-### Software Issues
-
-#### **mpremote Not Found**
-```bash
-pip install mpremote
-```
-
-#### **Python Not Found**
-- Add Python to system PATH
-- Install Python from python.org
-
-#### **GCC Not Found**
-- **Windows**: Install MinGW or use WSL
-- **macOS**: `xcode-select --install`
-- **Linux**: `sudo apt-get install build-essential`
-
-## Error Handling
-
-The application provides comprehensive error handling:
-- **Compilation Errors**: Syntax and compilation issues
-- **Upload Errors**: Hardware connection and transfer issues
-- **Execution Errors**: Runtime errors and exceptions
-- **Port Errors**: Serial port connection issues
-
-All errors are displayed in the terminal with clear error messages and suggestions for resolution.
+### 🔧 **Debug Information**
+- **Terminal Output**: Check terminal for detailed error messages
+- **Language Detection**: Console shows detected language
+- **Compilation Log**: Full compilation output in terminal
 
 ## Development
 
-### Adding New Languages
-1. Add compile function in `main.js`
-2. Add upload function in `main.js`
-3. Add run function in `main.js`
-4. Update `preload.js` with new API functions
-5. Update `renderer.js` with language support
-6. Add language option in UI
+### 🛠️ **Testing**
+Run the language detection test:
+```bash
+node test_language_detection.js
+```
 
-### Terminal Integration
-The terminal system uses IPC communication to display real-time output from main process operations. All compile, upload, and run operations send output to the terminal for user feedback.
+### 📁 **File Structure**
+- `renderer.js`: Main UI logic and language detection
+- `main.js`: Electron main process and compilation functions
+- `monaco.html`: Code editor with language detection
+- `navbar.html`: UI with language selection dropdown
+- `test_language_detection.js`: Language detection test suite
 
-### Hardware Testing
-Run `node test_hardware.js` to verify your hardware setup and dependencies are properly configured. 
+### 🔄 **Language Detection Logic**
+The system uses multiple detection methods:
+1. **Editor Language**: Monaco editor's built-in language detection
+2. **Code Content**: Pattern matching for language-specific syntax
+3. **Manual Selection**: User-selected language from dropdown
+4. **Fallback**: Last generated language as default
+
+## License
+
+This project is licensed under the MIT License. 

@@ -36,6 +36,12 @@ function getCurrentCode() {
 
 // Get current language from Monaco editor or last generated language
 function getCurrentLanguage() {
+  // Check if user has manually selected a language
+  const languageSelect = document.getElementById('languageSelect');
+  if (languageSelect && languageSelect.value && languageSelect.value !== 'auto') {
+    return languageSelect.value;
+  }
+  
   const editorWindow = document.getElementById('monacoEditor').contentWindow;
   if (editorWindow && editorWindow.getEditorLanguage) {
     const editorLang = editorWindow.getEditorLanguage();
@@ -43,8 +49,66 @@ function getCurrentLanguage() {
       return editorLang;
     }
   }
+  
+  // If editor language is not available, try to detect from code content
+  const code = getCurrentCode();
+  if (code.trim()) {
+    const detectedLang = detectLanguageFromCode(code);
+    if (detectedLang) {
+      return detectedLang;
+    }
+  }
+  
   // Fallback to last generated language
   return lastGeneratedLanguage;
+}
+
+// Detect language from code content
+function detectLanguageFromCode(code) {
+  const trimmedCode = code.trim();
+  
+  // Check for C/C++ includes
+  if (trimmedCode.includes('#include <') || trimmedCode.includes('#include"')) {
+    if (trimmedCode.includes('#include <Arduino.h>') || 
+        trimmedCode.includes('void setup()') || 
+        trimmedCode.includes('void loop()') ||
+        trimmedCode.includes('Serial.') ||
+        trimmedCode.includes('F_CPU')) {
+      return 'cpp';
+    }
+    return 'c';
+  }
+  
+  // Check for Python imports and syntax
+  if (trimmedCode.includes('import ') || 
+      trimmedCode.includes('def ') || 
+      trimmedCode.includes('print(') ||
+      trimmedCode.includes('if __name__') ||
+      trimmedCode.includes('time.sleep')) {
+    return 'python';
+  }
+  
+  // Check for JavaScript syntax
+  if (trimmedCode.includes('console.log(') || 
+      trimmedCode.includes('function ') ||
+      trimmedCode.includes('var ') ||
+      trimmedCode.includes('let ') ||
+      trimmedCode.includes('const ')) {
+    return 'javascript';
+  }
+  
+  // Check for C/C++ function syntax without includes
+  if (trimmedCode.includes('void ') || 
+      trimmedCode.includes('int main()') ||
+      trimmedCode.includes('printf(') ||
+      trimmedCode.includes('return 0;')) {
+    if (trimmedCode.includes('Serial.') || trimmedCode.includes('Arduino')) {
+      return 'cpp';
+    }
+    return 'c';
+  }
+  
+  return null; // Could not detect
 }
 
 // Set the current language when code is generated
@@ -52,6 +116,21 @@ function setCurrentLanguage(language) {
   lastGeneratedLanguage = language;
   console.log(`🎯 Language set to: ${language}`);
 }
+
+// Manually set language for compilation (exposed globally)
+function setLanguageForCompilation(language) {
+  if (language === 'auto') {
+    // Reset to auto-detect mode
+    lastGeneratedLanguage = 'python'; // Default fallback
+    console.log(`🎯 Language set to auto-detect mode`);
+  } else {
+    lastGeneratedLanguage = language;
+    console.log(`🎯 Language manually set to: ${language} for compilation`);
+  }
+}
+
+// Expose the function globally
+window.setLanguageForCompilation = setLanguageForCompilation;
 
 // Multi-language compile function
 async function compileCode() {
@@ -64,6 +143,7 @@ async function compileCode() {
   }
   
   appendTerminalOutput(`🔄 Compiling ${language} code...`);
+  console.log(`🎯 Compiling with language: ${language}`);
   
   try {
     let result;

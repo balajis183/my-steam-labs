@@ -121,6 +121,16 @@
     <select id="portSelect"></select>
     
     <button onclick="refreshPorts()">Refresh Ports</button>
+    
+    <!-- Language Selection Dropdown -->
+    <select id="languageSelect" onchange="setLanguageForCompilation(this.value)" style="background-color: lightgreen; color: black; padding: 6px 12px; border: none; border-radius: 6px; font-size: 12px; cursor: pointer; margin: 0 8px;">
+      <option value="auto">Auto Detect</option>
+      <option value="python">Python</option>
+      <option value="javascript">JavaScript</option>
+      <option value="cpp">C++</option>
+      <option value="c">C</option>
+    </select>
+    
     <button class="button run" onclick="runCode()">Run</button>
     <button class="button upload" onclick="uploadCode()">Upload</button>
     <button class="button compile" onclick="compileCode()">Compile</button>
